@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Passport Photo Studio & Multi-Person Family Sheet</title>
   <!-- MediaPipe Selfie Segmentation UMD -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js" crossorigin="anonymous"></script>
@@ -23,33 +24,36 @@
     * {
       box-sizing: border-box;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      touch-action: manipulation;
     }
     body {
       margin: 0;
       padding: 0;
       background-color: #f1f5f9;
       height: 100vh;
-      overflow: hidden;
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
 
     /* Top Navigation Tabs */
     .top-navbar {
       background: #0f172a;
       color: white;
-      height: 46px;
+      min-height: 48px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 20px;
+      padding: 0 16px;
       flex-shrink: 0;
+      gap: 10px;
     }
     .brand-title {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 800;
       letter-spacing: 0.5px;
       text-transform: uppercase;
+      white-space: nowrap;
     }
     .nav-tabs {
       display: flex;
@@ -59,24 +63,49 @@
       background: #1e293b;
       color: #94a3b8;
       border: none;
-      padding: 6px 14px;
+      padding: 6px 12px;
       border-radius: 4px;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.2s;
+      white-space: nowrap;
     }
-    .nav-tab:hover { color: white; }
     .nav-tab.active {
       background: var(--primary);
       color: white;
     }
 
+    /* Mobile Bottom Navigation Bar */
+    .mobile-subnav {
+      display: none;
+      background: #ffffff;
+      border-bottom: 1px solid var(--border-color);
+      padding: 6px;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .mob-tab-btn {
+      flex: 1;
+      height: 34px;
+      font-size: 11px;
+      font-weight: 700;
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .mob-tab-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
     /* 3-Column Studio Layout */
     .app-container {
       display: grid;
-      grid-template-columns: 330px 1fr 340px;
-      height: calc(100vh - 46px);
+      grid-template-columns: 320px 1fr 330px;
+      height: calc(100vh - 48px);
       width: 100vw;
       overflow: hidden;
     }
@@ -99,7 +128,7 @@
       border-left: 1px solid var(--border-color);
     }
     .panel-title {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 800;
       color: #0f172a;
       text-transform: uppercase;
@@ -224,9 +253,10 @@
       align-items: center;
       height: 100%;
       overflow-y: auto;
-      padding: 24px;
+      padding: 20px;
       background-color: #cbd5e1;
       gap: 20px;
+      -webkit-overflow-scrolling: touch;
     }
 
     .sheet {
@@ -297,11 +327,6 @@
       flex-direction: column;
       gap: 6px;
       cursor: pointer;
-      transition: all 0.2s;
-    }
-    .family-card:hover {
-      border-color: #93c5fd;
-      background: #f0f9ff;
     }
     .family-card.active-member {
       border-color: var(--primary);
@@ -338,7 +363,6 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      transition: background 0.2s;
     }
     .btn:hover { background-color: var(--primary-hover); }
     .btn:disabled {
@@ -379,12 +403,60 @@
       text-align: center;
     }
 
+    /* Mobile Responsive Breakpoint */
+    @media screen and (max-width: 990px) {
+      .mobile-subnav {
+        display: flex;
+      }
+      .app-container {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 94px);
+        overflow: hidden;
+      }
+      .sidebar {
+        width: 100%;
+        height: 100%;
+        border: none;
+        display: none;
+      }
+      .main-viewport {
+        width: 100%;
+        height: 100%;
+        display: none;
+        padding: 12px;
+      }
+      
+      /* Mobile active panel toggles */
+      .app-container.show-tools #leftSidebarStudio {
+        display: flex;
+      }
+      .app-container.show-preview #mainViewport {
+        display: flex;
+      }
+      .app-container.show-adjust #rightSidebarStudio {
+        display: flex;
+      }
+
+      /* Scale sheet preview to fit narrow mobile viewports */
+      .sheet.a4 {
+        transform: scale(0.42);
+        transform-origin: top center;
+        margin-bottom: -160mm;
+      }
+      .sheet.photo4x6 {
+        transform: scale(0.6);
+        transform-origin: top center;
+        margin-bottom: -35mm;
+      }
+    }
+
     @media print {
       body { background: transparent; height: auto; overflow: visible; }
-      .top-navbar, .sidebar, .slot-member-badge { display: none !important; }
+      .top-navbar, .mobile-subnav, .sidebar, .slot-member-badge { display: none !important; }
       .app-container { display: block; height: auto; }
-      .main-viewport { background: transparent; padding: 0; overflow: visible; }
-      .sheet { box-shadow: none; margin: 0; }
+      .main-viewport { background: transparent; padding: 0; overflow: visible; display: block !important; }
+      .sheet { box-shadow: none; margin: 0; transform: none !important; }
       .page-label { display: none; }
       .photo-slot { border: 2px solid #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     }
@@ -394,14 +466,21 @@
 
 <!-- Top Navigation -->
 <div class="top-navbar">
-  <div class="brand-title">Studio Passport Photo Suite</div>
+  <div class="brand-title">Passport Suite</div>
   <div class="nav-tabs">
-    <button type="button" class="nav-tab active" id="tabStudio">Single Studio Mode</button>
-    <button type="button" class="nav-tab" id="tabFamily">Family Batch Clustering</button>
+    <button type="button" class="nav-tab active" id="tabStudio">Studio</button>
+    <button type="button" class="nav-tab" id="tabFamily">Family Batch</button>
   </div>
 </div>
 
-<div class="app-container">
+<!-- Mobile Sub Navigation Tabs -->
+<div class="mobile-subnav" id="mobileSubnav">
+  <button type="button" class="mob-tab-btn active" id="mobBtnTools">1. Edit & Face</button>
+  <button type="button" class="mob-tab-btn" id="mobBtnPreview">2. Sheet Preview</button>
+  <button type="button" class="mob-tab-btn" id="mobBtnAdjust">3. Print & Export</button>
+</div>
+
+<div class="app-container show-tools" id="appContainer">
   <!-- LEFT SIDEBAR -->
   <div class="sidebar" id="leftSidebarStudio">
     <div class="active-editor-indicator" id="activeEditorIndicator">
@@ -439,7 +518,7 @@
           <span class="guide-text">Chin Line</span>
         </div>
       </div>
-      <span class="drag-hint" id="canvasHint">Drag face into oval | Scroll to zoom</span>
+      <span class="drag-hint" id="canvasHint">Drag face into oval | Pinch/Scroll to zoom</span>
     </div>
 
     <!-- Eraser & Cleanup Tools -->
@@ -551,7 +630,7 @@
   </div>
 
   <!-- RIGHT SIDEBAR -->
-  <div class="sidebar right-sidebar">
+  <div class="sidebar right-sidebar" id="rightSidebarStudio">
     <h3 class="panel-title">2. Color, Edges & Layout</h3>
 
     <div class="control-group">
@@ -586,12 +665,12 @@
     </div>
 
     <div class="control-group">
-      <label for="edgeFeather">Edge Feather / Softening: <span id="valEdgeFeather">0px</span></label>
+      <label for="edgeFeather">Edge Feather: <span id="valEdgeFeather">0px</span></label>
       <input type="range" id="edgeFeather" data-cfg="edgeFeather" min="0" max="6" value="0" step="0.5">
     </div>
 
     <div class="control-group">
-      <label for="bgColor">Solid Background / Gradient Base</label>
+      <label for="bgColor">Background Color</label>
       <input type="color" id="bgColor" data-cfg="bgColor" value="#ffffff">
     </div>
 
@@ -664,7 +743,7 @@
   </div>
 </div>
 
-<!-- Offscreen Processing Canvases -->
+<!-- Offscreen Canvases -->
 <canvas id="personCanvas" style="display: none;"></canvas>
 <canvas id="maskCanvas" style="display: none;"></canvas>
 <canvas id="bgCanvas" style="display: none;"></canvas>
@@ -699,6 +778,11 @@
   const singleUploadGroup = document.getElementById('singleUploadGroup');
   const activeEditorIndicator = document.getElementById('activeEditorIndicator');
   const activeEditorText = document.getElementById('activeEditorText');
+
+  const appContainer = document.getElementById('appContainer');
+  const mobBtnTools = document.getElementById('mobBtnTools');
+  const mobBtnPreview = document.getElementById('mobBtnPreview');
+  const mobBtnAdjust = document.getElementById('mobBtnAdjust');
 
   const upload = document.getElementById('imageUpload');
   const presetSelect = document.getElementById('presetSelect');
@@ -810,6 +894,30 @@
   };
 
   const customSuitImage = new Image();
+
+  // Mobile View Switcher
+  function setMobileView(view) {
+    appContainer.classList.remove('show-tools', 'show-preview', 'show-adjust');
+    mobBtnTools.classList.remove('active');
+    mobBtnPreview.classList.remove('active');
+    mobBtnAdjust.classList.remove('active');
+
+    if (view === 'tools') {
+      appContainer.classList.add('show-tools');
+      mobBtnTools.classList.add('active');
+    } else if (view === 'preview') {
+      appContainer.classList.add('show-preview');
+      mobBtnPreview.classList.add('active');
+      updateGridSheets();
+    } else if (view === 'adjust') {
+      appContainer.classList.add('show-adjust');
+      mobBtnAdjust.classList.add('active');
+    }
+  }
+
+  mobBtnTools.addEventListener('click', () => setMobileView('tools'));
+  mobBtnPreview.addEventListener('click', () => setMobileView('preview'));
+  mobBtnAdjust.addEventListener('click', () => setMobileView('adjust'));
 
   function pushMaskState() {
     if (!maskCanvas.width || !maskCanvas.height) return;
@@ -1009,7 +1117,7 @@
 
     cropContainer.className = `crop-container mode-${tool}`;
     if (tool === 'pan') {
-      canvasHint.innerText = "Drag face into oval | Scroll to zoom";
+      canvasHint.innerText = "Drag face into oval | Pinch/Scroll to zoom";
     } else if (tool === 'erase') {
       canvasHint.innerText = "Brush over unwanted objects/blemishes to erase";
     } else if (tool === 'restore') {
@@ -1123,6 +1231,7 @@
     personCanvas.width = w;
     personCanvas.height = h;
 
+    // 1. Color adjustments
     pCtx.clearRect(0, 0, w, h);
     pCtx.filter = `brightness(${cfg.brightness}%) contrast(${cfg.contrast}%)`;
     pCtx.drawImage(imgToUse, 0, 0, w, h);
@@ -1157,6 +1266,7 @@
       pCtx.restore();
     }
 
+    // 2. Edge Feathering / Antialiasing & Masking
     const maskToUse = profileOverride ? profile.maskCanvas : maskCanvas;
     if (cfg.bgType !== 'original' && maskToUse && maskToUse.width) {
       const featherPx = parseFloat(cfg.edgeFeather || 0);
@@ -1398,7 +1508,10 @@
           slot.className = 'photo-slot';
           slot.style.width = `${config.w}mm`;
           slot.style.height = `${config.h}mm`;
-          slot.onclick = () => selectFamilyMember(member.id);
+          slot.onclick = () => {
+            selectFamilyMember(member.id);
+            setMobileView('tools');
+          };
           slot.innerHTML = `
             <img src="${memberDataUrl}" alt="${member.name}">
             <span class="slot-member-badge">${member.name}</span>
@@ -1670,35 +1783,67 @@
     renderInteractivePreview();
   }
 
-  cropContainer.addEventListener('mousedown', (e) => {
+  // Mouse & Touch Handlers (Mobile Support)
+  function getEventCoords(e) {
+    if (e.touches && e.touches.length > 0) {
+      return { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY };
+    }
+    return { clientX: e.clientX, clientY: e.clientY };
+  }
+
+  function handlePointerDown(e) {
     isInteracting = true;
+    const { clientX, clientY } = getEventCoords(e);
     if (activeTool === 'pan') {
-      startX = e.clientX - panX;
-      startY = e.clientY - panY;
+      startX = clientX - panX;
+      startY = clientY - panY;
     } else {
       pushMaskState();
-      applyMaskBrush(e.clientX, e.clientY);
+      applyMaskBrush(clientX, clientY);
     }
-  });
+  }
 
-  window.addEventListener('mousemove', (e) => {
+  function handlePointerMove(e) {
     if (!isInteracting) return;
+    const { clientX, clientY } = getEventCoords(e);
     if (activeTool === 'pan') {
-      panX = e.clientX - startX;
-      panY = e.clientY - startY;
+      panX = clientX - startX;
+      panY = clientY - startY;
       renderInteractivePreview();
     } else {
-      applyMaskBrush(e.clientX, e.clientY);
+      applyMaskBrush(clientX, clientY);
     }
-  });
+  }
 
-  window.addEventListener('mouseup', () => {
+  function handlePointerUp() {
     if (isInteracting) {
       isInteracting = false;
       saveCurrentEditorToActiveProfile();
       updateGridSheets();
     }
-  });
+  }
+
+  // Mouse Events
+  cropContainer.addEventListener('mousedown', handlePointerDown);
+  window.addEventListener('mousemove', handlePointerMove);
+  window.addEventListener('mouseup', handlePointerUp);
+
+  // Touch Events (Mobile Drag & Erase)
+  cropContainer.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 1) {
+      e.preventDefault();
+      handlePointerDown(e);
+    }
+  }, { passive: false });
+
+  window.addEventListener('touchmove', (e) => {
+    if (isInteracting && e.touches.length === 1) {
+      e.preventDefault();
+      handlePointerMove(e);
+    }
+  }, { passive: false });
+
+  window.addEventListener('touchend', handlePointerUp);
 
   cropContainer.addEventListener('wheel', (e) => {
     e.preventDefault();
@@ -1779,7 +1924,7 @@
     saveCurrentEditorToActiveProfile();
 
     const configData = {
-      version: "3.2",
+      version: "3.3",
       timestamp: new Date().toISOString(),
       appMode: appMode,
       singleStudioState: {

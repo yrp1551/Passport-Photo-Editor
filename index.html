@@ -290,8 +290,7 @@
       font-weight: 600;
     }
     .photo-slot {
-      border: 2px solid #000;
-      overflow: hidden;
+      overflow: visible;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -300,10 +299,17 @@
       position: relative;
       cursor: pointer;
     }
+    .photo-slot.border-solid {
+      border: 2px solid #000;
+    }
+    .photo-slot.border-none {
+      border: none;
+    }
     .photo-slot img {
       width: 100%;
       height: 100%;
       object-fit: cover;
+      display: block;
     }
     .slot-member-badge {
       position: absolute;
@@ -315,6 +321,38 @@
       padding: 1px 3px;
       border-radius: 2px;
       pointer-events: none;
+    }
+
+    /* Corner Crop Marks for DOM Preview */
+    .crop-mark {
+      position: absolute;
+      width: 4mm;
+      height: 4mm;
+      pointer-events: none;
+    }
+    .crop-mark-tl {
+      top: -1px;
+      left: -1px;
+      border-top: 1.5px solid #000;
+      border-left: 1.5px solid #000;
+    }
+    .crop-mark-tr {
+      top: -1px;
+      right: -1px;
+      border-top: 1.5px solid #000;
+      border-right: 1.5px solid #000;
+    }
+    .crop-mark-bl {
+      bottom: -1px;
+      left: -1px;
+      border-bottom: 1.5px solid #000;
+      border-left: 1.5px solid #000;
+    }
+    .crop-mark-br {
+      bottom: -1px;
+      right: -1px;
+      border-bottom: 1.5px solid #000;
+      border-right: 1.5px solid #000;
     }
 
     /* Family Queue Cards */
@@ -427,7 +465,6 @@
         padding: 12px;
       }
       
-      /* Mobile active panel toggles */
       .app-container.show-tools #leftSidebarStudio {
         display: flex;
       }
@@ -438,7 +475,6 @@
         display: flex;
       }
 
-      /* Scale sheet preview to fit narrow mobile viewports */
       .sheet.a4 {
         transform: scale(0.42);
         transform-origin: top center;
@@ -458,7 +494,7 @@
       .main-viewport { background: transparent; padding: 0; overflow: visible; display: block !important; }
       .sheet { box-shadow: none; margin: 0; transform: none !important; }
       .page-label { display: none; }
-      .photo-slot { border: 2px solid #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .photo-slot { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     }
   </style>
 </head>
@@ -574,13 +610,19 @@
       <label for="suitSelect">Select Outfit</label>
       <select id="suitSelect" data-cfg="suit">
         <option value="none" selected>None (Original Clothes)</option>
-        <option value="suit1">Navy Suit & Tie</option>
-        <option value="suit2">Charcoal Suit & Shirt</option>
-        <option value="suit3">Classic Black Tuxedo</option>
-        <option value="suit4">Dark Gray Suit & Tie</option>
-        <option value="suit5">White Shirt & Tie</option>
-        <option value="suit6">Sky Blue Office Shirt</option>
-        <option value="suit7">Navy Professional Blazer</option>
+        <optgroup label="Real PNG Suits (Images Folder)">
+          <option value="png_black">Black Suit 01 (PNG)</option>
+          <option value="png_blue">Blue Suit 02 (PNG)</option>
+        </optgroup>
+        <optgroup label="Vector Templates (Recolorable)">
+          <option value="suit1">Navy Suit & Tie</option>
+          <option value="suit2">Charcoal Suit & Shirt</option>
+          <option value="suit3">Classic Black Tuxedo</option>
+          <option value="suit4">Dark Gray Suit & Tie</option>
+          <option value="suit5">White Shirt & Tie</option>
+          <option value="suit6">Sky Blue Office Shirt</option>
+          <option value="suit7">Navy Professional Blazer</option>
+        </optgroup>
         <option value="custom" id="customSuitOption" disabled>Custom Uploaded PNG</option>
       </select>
     </div>
@@ -647,6 +689,16 @@
       <select id="paperSelect" data-cfg="paper">
         <option value="a4" selected>Full A4 Sheet</option>
         <option value="photo4x6">4 x 6 inch Photo Card</option>
+      </select>
+    </div>
+
+    <!-- Cut Guide & Border Style Selection -->
+    <div class="control-group">
+      <label for="borderStyleSelect">Cutting Guides / Borders</label>
+      <select id="borderStyleSelect" data-cfg="borderStyle">
+        <option value="cropmarks" selected>Corner Crop Marks (Trim Lines)</option>
+        <option value="solid">Solid Black Border (2px)</option>
+        <option value="none">No Border / Plain Cut</option>
       </select>
     </div>
 
@@ -752,7 +804,6 @@
 <canvas id="exportSheetCanvas" style="display: none;"></canvas>
 
 <script>
-  // Top-level global definitions
   let panX = 0;
   let panY = 0;
   let baseAngle = 0;
@@ -787,6 +838,7 @@
   const upload = document.getElementById('imageUpload');
   const presetSelect = document.getElementById('presetSelect');
   const paperSelect = document.getElementById('paperSelect');
+  const borderStyleSelect = document.getElementById('borderStyleSelect');
   const bgTypeSelect = document.getElementById('bgTypeSelect');
   const btnTriggerAICutout = document.getElementById('btnTriggerAICutout');
   const edgeFeatherSlider = document.getElementById('edgeFeather');
@@ -853,6 +905,7 @@
   const defaultSettings = {
     preset: '35x45',
     paper: 'a4',
+    borderStyle: 'cropmarks',
     bgType: 'original',
     suit: 'none',
     suitScale: 100,
@@ -893,9 +946,16 @@
     settings: { ...defaultSettings }
   };
 
+  // Preloaded PNG Suit Images
+  const preloadedPngSuits = {
+    png_black: new Image(),
+    png_blue: new Image()
+  };
+  preloadedPngSuits.png_black.src = 'Images/Black_Suit_01.png';
+  preloadedPngSuits.png_blue.src = 'Images/Blue_Suit_02.png';
+
   const customSuitImage = new Image();
 
-  // Mobile View Switcher
   function setMobileView(view) {
     appContainer.classList.remove('show-tools', 'show-preview', 'show-adjust');
     mobBtnTools.classList.remove('active');
@@ -1314,10 +1374,15 @@
     ctx.drawImage(personCanvas, -drawW / 2, -drawH / 2, drawW, drawH);
     ctx.restore();
 
+    // 3. Formal Suit Overlay
     const selectedSuit = cfg.suit;
     if (selectedSuit !== 'none') {
       let suitImgToDraw = null;
-      if (selectedSuit === 'custom' && customSuitImage.src) {
+      if (selectedSuit === 'png_black' && preloadedPngSuits.png_black.complete) {
+        suitImgToDraw = preloadedPngSuits.png_black;
+      } else if (selectedSuit === 'png_blue' && preloadedPngSuits.png_blue.complete) {
+        suitImgToDraw = preloadedPngSuits.png_blue;
+      } else if (selectedSuit === 'custom' && customSuitImage.src) {
         suitImgToDraw = customSuitImage;
       } else {
         const svgString = getSuitSVG(selectedSuit, cfg.suitJacketColor, cfg.suitTieColor);
@@ -1331,7 +1396,7 @@
         const sScale = (parseInt(cfg.suitScale, 10) / 100) * scaleMultiplier;
         const neckFactor = parseInt(cfg.suitNeckWidth, 10) / 100;
         const sOffsetX = parseInt(cfg.suitX, 10) * scaleMultiplier;
-        const sOffsetY = parseInt(cfg.suitY, 10) * scaleMultiplier;
+        const sOffsetY = parseInt(suitYSlider.value, 10) * scaleMultiplier;
 
         const suitBaseW = targetWidth * 1.05 * sScale * neckFactor;
         const suitBaseH = (targetWidth * 1.05 * 0.8) * sScale;
@@ -1467,8 +1532,38 @@
     const paper = paperSelect.value;
     const gapMm = parseInt(gridGapSlider.value, 10);
     const marginMm = parseInt(pageMarginSlider.value, 10);
+    const borderStyle = borderStyleSelect.value;
 
     pagesContainer.innerHTML = '';
+
+    const borderClass = borderStyle === 'solid' ? 'border-solid' : 'border-none';
+    const showCropMarks = (borderStyle === 'cropmarks');
+
+    function createSlotElement(imgUrl, badgeName = null) {
+      const slot = document.createElement('div');
+      slot.className = `photo-slot ${borderClass}`;
+      slot.style.width = `${config.w}mm`;
+      slot.style.height = `${config.h}mm`;
+
+      if (imgUrl) {
+        slot.innerHTML = `<img src="${imgUrl}" alt="Passport Photo">`;
+      }
+
+      if (showCropMarks) {
+        slot.insertAdjacentHTML('beforeend', `
+          <div class="crop-mark crop-mark-tl"></div>
+          <div class="crop-mark crop-mark-tr"></div>
+          <div class="crop-mark crop-mark-bl"></div>
+          <div class="crop-mark crop-mark-br"></div>
+        `);
+      }
+
+      if (badgeName) {
+        slot.insertAdjacentHTML('beforeend', `<span class="slot-member-badge">${badgeName}</span>`);
+      }
+
+      return slot;
+    }
 
     if (appMode === 'studio') {
       const slotsCount = parseInt(slotsPerPageInput.value, 10) || 1;
@@ -1483,14 +1578,7 @@
         sheet.innerHTML = `<span class="page-label">Page ${p} of ${pagesCount}</span>`;
 
         for (let s = 0; s < slotsCount; s++) {
-          const slot = document.createElement('div');
-          slot.className = 'photo-slot';
-          slot.style.width = `${config.w}mm`;
-          slot.style.height = `${config.h}mm`;
-          if (singleDataUrl) {
-            slot.innerHTML = `<img src="${singleDataUrl}" alt="Passport Photo">`;
-          }
-          sheet.appendChild(slot);
+          sheet.appendChild(createSlotElement(singleDataUrl));
         }
         pagesContainer.appendChild(sheet);
       }
@@ -1504,18 +1592,11 @@
       familyQueue.forEach(member => {
         const memberDataUrl = getSinglePhotoDataUrl(member);
         for (let s = 0; s < member.slots; s++) {
-          const slot = document.createElement('div');
-          slot.className = 'photo-slot';
-          slot.style.width = `${config.w}mm`;
-          slot.style.height = `${config.h}mm`;
+          const slot = createSlotElement(memberDataUrl, member.name);
           slot.onclick = () => {
             selectFamilyMember(member.id);
             setMobileView('tools');
           };
-          slot.innerHTML = `
-            <img src="${memberDataUrl}" alt="${member.name}">
-            <span class="slot-member-badge">${member.name}</span>
-          `;
           sheet.appendChild(slot);
         }
       });
@@ -1523,11 +1604,36 @@
     }
   }
 
+  function drawCanvasCropMarks(ctx, x, y, w, h) {
+    const markLength = Math.round(3.5 * 11.811);
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#000000';
+
+    ctx.beginPath();
+    ctx.moveTo(x - markLength, y);
+    ctx.lineTo(x, y);
+    ctx.lineTo(x, y - markLength);
+
+    ctx.moveTo(x + w + markLength, y);
+    ctx.lineTo(x + w, y);
+    ctx.lineTo(x + w, y - markLength);
+
+    ctx.moveTo(x - markLength, y + h);
+    ctx.lineTo(x, y + h);
+    ctx.lineTo(x, y + h + markLength);
+
+    ctx.moveTo(x + w + markLength, y + h);
+    ctx.lineTo(x + w, y + h);
+    ctx.lineTo(x + w, y + h + markLength);
+    ctx.stroke();
+  }
+
   function generateSheetCanvas(callback) {
     saveCurrentEditorToActiveProfile();
 
     const config = presets[presetSelect.value];
     const paper = paperSelect.value;
+    const borderStyle = borderStyleSelect.value;
     const sheetCanvas = document.getElementById('exportSheetCanvas');
     const sCtx = sheetCanvas.getContext('2d');
 
@@ -1544,6 +1650,17 @@
     const photoHPx = Math.round(config.h * 11.811);
 
     const maxCols = Math.floor((sheetWidthPx - 40) / (photoWPx + gapPx));
+
+    function drawSlotOnCanvas(img, x, y) {
+      sCtx.drawImage(img, x, y, photoWPx, photoHPx);
+      if (borderStyle === 'solid') {
+        sCtx.lineWidth = 4;
+        sCtx.strokeStyle = '#000000';
+        sCtx.strokeRect(x, y, photoWPx, photoHPx);
+      } else if (borderStyle === 'cropmarks') {
+        drawCanvasCropMarks(sCtx, x, y, photoWPx, photoHPx);
+      }
+    }
 
     if (appMode === 'studio') {
       if (!singleStudioState.sourceImage) return;
@@ -1564,11 +1681,7 @@
           const c = i % cols;
           const x = startX + (c * (photoWPx + gapPx));
           const y = startY + (r * (photoHPx + gapPx));
-
-          sCtx.drawImage(singleImg, x, y, photoWPx, photoHPx);
-          sCtx.lineWidth = 4;
-          sCtx.strokeStyle = '#000000';
-          sCtx.strokeRect(x, y, photoWPx, photoHPx);
+          drawSlotOnCanvas(singleImg, x, y);
         }
         callback(sheetCanvas);
       };
@@ -1601,11 +1714,7 @@
                 const c = currentSlotIndex % cols;
                 const x = startX + (c * (photoWPx + gapPx));
                 const y = startY + (r * (photoHPx + gapPx));
-
-                sCtx.drawImage(img, x, y, photoWPx, photoHPx);
-                sCtx.lineWidth = 4;
-                sCtx.strokeStyle = '#000000';
-                sCtx.strokeRect(x, y, photoWPx, photoHPx);
+                drawSlotOnCanvas(img, x, y);
                 currentSlotIndex++;
               }
             });
@@ -1783,7 +1892,6 @@
     renderInteractivePreview();
   }
 
-  // Mouse & Touch Handlers (Mobile Support)
   function getEventCoords(e) {
     if (e.touches && e.touches.length > 0) {
       return { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY };
@@ -1823,12 +1931,10 @@
     }
   }
 
-  // Mouse Events
   cropContainer.addEventListener('mousedown', handlePointerDown);
   window.addEventListener('mousemove', handlePointerMove);
   window.addEventListener('mouseup', handlePointerUp);
 
-  // Touch Events (Mobile Drag & Erase)
   cropContainer.addEventListener('touchstart', (e) => {
     if (e.touches.length === 1) {
       e.preventDefault();
@@ -1924,7 +2030,7 @@
     saveCurrentEditorToActiveProfile();
 
     const configData = {
-      version: "3.3",
+      version: "3.5",
       timestamp: new Date().toISOString(),
       appMode: appMode,
       singleStudioState: {
@@ -2056,7 +2162,7 @@
     setTimeout(() => { statusMsg.innerText = ""; }, 1800);
   });
 
-  [presetSelect, paperSelect, bgTypeSelect, suitSelect, slotsPerPageInput, totalPagesInput].forEach(elem => {
+  [presetSelect, paperSelect, borderStyleSelect, bgTypeSelect, suitSelect, slotsPerPageInput, totalPagesInput].forEach(elem => {
     elem.addEventListener('change', () => {
       saveCurrentEditorToActiveProfile();
       adjustCropContainerSize();

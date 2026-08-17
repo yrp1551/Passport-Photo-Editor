@@ -4,9 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Passport Photo Studio & Multi-Person Family Sheet</title>
-  <!-- MediaPipe Selfie Segmentation UMD -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js" crossorigin="anonymous"></script>
-  <!-- jsPDF for Direct Multi-Page PDF Generation -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     :root {
@@ -36,7 +34,7 @@
       overflow: hidden;
     }
 
-    /* Top Navigation Tabs */
+    /* Top Navigation */
     .top-navbar {
       background: #0f172a;
       color: white;
@@ -75,7 +73,7 @@
       color: white;
     }
 
-    /* Mobile Bottom Navigation Bar */
+    /* Mobile Sub Navigation */
     .mobile-subnav {
       display: none;
       background: #ffffff;
@@ -101,16 +99,14 @@
       border-color: var(--primary);
     }
 
-    /* 3-Column Studio Layout */
+    /* Layout */
     .app-container {
       display: grid;
-      grid-template-columns: 320px 1fr 330px;
+      grid-template-columns: 340px 1fr 340px;
       height: calc(100vh - 48px);
       width: 100vw;
       overflow: hidden;
     }
-
-    /* Sidebars */
     .sidebar {
       background: var(--panel-bg);
       border-right: 1px solid var(--border-color);
@@ -118,30 +114,61 @@
       flex-direction: column;
       height: 100%;
       overflow-y: auto;
-      padding: 16px;
-      gap: 14px;
+      padding: 12px;
+      gap: 12px;
       box-shadow: 0 0 10px rgba(0,0,0,0.03);
       z-index: 10;
+      -webkit-overflow-scrolling: touch;
     }
     .sidebar.right-sidebar {
       border-right: none;
       border-left: 1px solid var(--border-color);
     }
-    .panel-title {
-      font-size: 12px;
+
+    /* Collapsible Sections */
+    details.accordion-sec {
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      background: #ffffff;
+      flex-shrink: 0;
+    }
+    details.accordion-sec summary {
+      padding: 10px 12px;
+      font-size: 11px;
       font-weight: 800;
-      color: #0f172a;
+      color: #1e293b;
       text-transform: uppercase;
-      letter-spacing: 0.8px;
-      padding-bottom: 6px;
-      border-bottom: 2px solid #f1f5f9;
-      margin: 0;
+      letter-spacing: 0.5px;
+      background: #f8fafc;
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid transparent;
+    }
+    details.accordion-sec[open] summary {
+      border-bottom-color: var(--border-color);
+      background: #f1f5f9;
+    }
+    .accordion-body {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
 
+    /* Controls & Tooltips */
     .control-group {
       display: flex;
       flex-direction: column;
       gap: 4px;
+      position: relative;
+    }
+    .label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
     label {
       font-size: 11px;
@@ -150,14 +177,47 @@
       text-transform: uppercase;
       letter-spacing: 0.5px;
       display: flex;
-      justify-content: space-between;
+      align-items: center;
+      gap: 4px;
     }
-    input[type="range"] {
-      width: 100%;
-      cursor: pointer;
+    .tip-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 13px;
+      height: 13px;
+      background: #e2e8f0;
+      color: #475569;
+      border-radius: 50%;
+      font-size: 9px;
+      font-weight: 800;
+      cursor: help;
+      position: relative;
     }
+    .tip-icon:hover::after {
+      content: attr(data-tip);
+      position: absolute;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #0f172a;
+      color: #ffffff;
+      padding: 5px 8px;
+      font-size: 10px;
+      border-radius: 4px;
+      white-space: normal;
+      width: 170px;
+      line-height: 1.3;
+      z-index: 100;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+      pointer-events: none;
+      text-transform: none;
+      font-weight: 500;
+    }
+
+    input[type="range"] { width: 100%; cursor: pointer; }
     input[type="number"], select, input[type="file"], button, input[type="text"] {
-      height: 34px;
+      height: 32px;
       padding: 4px 8px;
       border: 1px solid var(--border-color);
       border-radius: 6px;
@@ -165,7 +225,7 @@
       background: white;
     }
     input[type="color"] {
-      height: 34px;
+      height: 32px;
       padding: 2px;
       width: 100%;
       border: 1px solid var(--border-color);
@@ -173,7 +233,7 @@
       cursor: pointer;
     }
 
-    /* Cropper Viewport (Left Panel) */
+    /* Cropper Viewport */
     .crop-wrapper {
       display: flex;
       flex-direction: column;
@@ -232,7 +292,6 @@
       font-weight: 500;
       text-align: center;
     }
-
     .active-editor-indicator {
       background: #dbeafe;
       border: 1px solid #93c5fd;
@@ -246,7 +305,47 @@
       align-items: center;
     }
 
-    /* Center Main Canvas Area */
+    /* Live Camera Modal */
+    .camera-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(15, 23, 42, 0.85);
+      z-index: 1000;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .camera-box {
+      background: white;
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      max-width: 420px;
+      width: 100%;
+    }
+    .camera-view-wrapper {
+      position: relative;
+      width: 280px;
+      height: 360px;
+      border-radius: 8px;
+      overflow: hidden;
+      background: black;
+    }
+    .camera-view-wrapper video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Main Viewport & Sheets */
     .main-viewport {
       display: flex;
       flex-direction: column;
@@ -258,7 +357,6 @@
       gap: 20px;
       -webkit-overflow-scrolling: touch;
     }
-
     .sheet {
       background: white;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
@@ -271,24 +369,9 @@
       position: relative;
       flex-shrink: 0;
     }
-    .sheet.a4 {
-      width: 210mm;
-      min-height: 297mm;
-      max-height: 297mm;
-    }
-    .sheet.photo4x6 {
-      width: 152.4mm;
-      min-height: 101.6mm;
-      max-height: 101.6mm;
-    }
-    .page-label {
-      position: absolute;
-      top: 2mm;
-      right: 4mm;
-      font-size: 10px;
-      color: #94a3b8;
-      font-weight: 600;
-    }
+    .sheet.a4 { width: 210mm; min-height: 297mm; max-height: 297mm; }
+    .sheet.photo4x6 { width: 152.4mm; min-height: 101.6mm; max-height: 101.6mm; }
+    .page-label { position: absolute; top: 2mm; right: 4mm; font-size: 10px; color: #94a3b8; font-weight: 600; }
     .photo-slot {
       overflow: visible;
       display: flex;
@@ -299,18 +382,9 @@
       position: relative;
       cursor: pointer;
     }
-    .photo-slot.border-solid {
-      border: 2px solid #000;
-    }
-    .photo-slot.border-none {
-      border: none;
-    }
-    .photo-slot img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
+    .photo-slot.border-solid { border: 2px solid #000; }
+    .photo-slot.border-none { border: none; }
+    .photo-slot img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .slot-member-badge {
       position: absolute;
       bottom: 2px;
@@ -323,39 +397,14 @@
       pointer-events: none;
     }
 
-    /* Corner Crop Marks for DOM Preview */
-    .crop-mark {
-      position: absolute;
-      width: 4mm;
-      height: 4mm;
-      pointer-events: none;
-    }
-    .crop-mark-tl {
-      top: -1px;
-      left: -1px;
-      border-top: 1.5px solid #000;
-      border-left: 1.5px solid #000;
-    }
-    .crop-mark-tr {
-      top: -1px;
-      right: -1px;
-      border-top: 1.5px solid #000;
-      border-right: 1.5px solid #000;
-    }
-    .crop-mark-bl {
-      bottom: -1px;
-      left: -1px;
-      border-bottom: 1.5px solid #000;
-      border-left: 1.5px solid #000;
-    }
-    .crop-mark-br {
-      bottom: -1px;
-      right: -1px;
-      border-bottom: 1.5px solid #000;
-      border-right: 1.5px solid #000;
-    }
+    /* Crop Marks */
+    .crop-mark { position: absolute; width: 4mm; height: 4mm; pointer-events: none; }
+    .crop-mark-tl { top: -1px; left: -1px; border-top: 1.5px solid #000; border-left: 1.5px solid #000; }
+    .crop-mark-tr { top: -1px; right: -1px; border-top: 1.5px solid #000; border-right: 1.5px solid #000; }
+    .crop-mark-bl { bottom: -1px; left: -1px; border-bottom: 1.5px solid #000; border-left: 1.5px solid #000; }
+    .crop-mark-br { bottom: -1px; right: -1px; border-bottom: 1.5px solid #000; border-right: 1.5px solid #000; }
 
-    /* Family Queue Cards */
+    /* Family Cards */
     .family-card {
       background: #f8fafc;
       border: 1px solid #e2e8f0;
@@ -371,29 +420,17 @@
       background: #eff6ff;
       box-shadow: 0 0 0 1px var(--primary);
     }
-    .family-card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .family-card-title {
-      font-size: 12px;
-      font-weight: 700;
-      color: #1e293b;
-    }
+    .family-card-header { display: flex; justify-content: space-between; align-items: center; }
+    .family-card-title { font-size: 12px; font-weight: 700; color: #1e293b; }
 
     /* Buttons */
-    .btn-group {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
+    .btn-group { display: flex; flex-direction: column; gap: 6px; }
     .btn {
       width: 100%;
       background-color: var(--primary);
       color: white;
       border: none;
-      height: 36px;
+      height: 34px;
       border-radius: 6px;
       font-size: 12px;
       font-weight: 600;
@@ -403,13 +440,7 @@
       justify-content: center;
     }
     .btn:hover { background-color: var(--primary-hover); }
-    .btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      background-color: #cbd5e1 !important;
-      color: #94a3b8 !important;
-      border-color: #cbd5e1 !important;
-    }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; background-color: #cbd5e1 !important; color: #94a3b8 !important; }
     .btn-success { background-color: var(--success); }
     .btn-success:hover { background-color: var(--success-hover); }
     .btn-secondary { background-color: var(--secondary); }
@@ -422,74 +453,27 @@
       border: 1px solid var(--border-color);
       font-weight: 700;
       font-size: 11px;
-      height: 32px;
+      height: 30px;
     }
-    .btn-icon:hover {
-      background-color: #e2e8f0;
-      color: #0f172a;
-    }
-    .btn-icon.active {
-      background-color: var(--primary);
-      color: white;
-      border-color: var(--primary);
-    }
-    .status-msg {
-      font-size: 12px;
-      color: var(--primary);
-      font-weight: 600;
-      min-height: 16px;
-      text-align: center;
-    }
+    .btn-icon:hover { background-color: #e2e8f0; color: #0f172a; }
+    .btn-icon.active { background-color: var(--primary); color: white; border-color: var(--primary); }
+    .status-msg { font-size: 12px; color: var(--primary); font-weight: 600; min-height: 16px; text-align: center; }
 
-    /* Mobile Responsive Breakpoint */
     @media screen and (max-width: 990px) {
-      .mobile-subnav {
-        display: flex;
-      }
-      .app-container {
-        display: flex;
-        flex-direction: column;
-        height: calc(100vh - 94px);
-        overflow: hidden;
-      }
-      .sidebar {
-        width: 100%;
-        height: 100%;
-        border: none;
-        display: none;
-      }
-      .main-viewport {
-        width: 100%;
-        height: 100%;
-        display: none;
-        padding: 12px;
-      }
-      
-      .app-container.show-tools #leftSidebarStudio {
-        display: flex;
-      }
-      .app-container.show-preview #mainViewport {
-        display: flex;
-      }
-      .app-container.show-adjust #rightSidebarStudio {
-        display: flex;
-      }
-
-      .sheet.a4 {
-        transform: scale(0.42);
-        transform-origin: top center;
-        margin-bottom: -160mm;
-      }
-      .sheet.photo4x6 {
-        transform: scale(0.6);
-        transform-origin: top center;
-        margin-bottom: -35mm;
-      }
+      .mobile-subnav { display: flex; }
+      .app-container { display: flex; flex-direction: column; height: calc(100vh - 94px); overflow: hidden; }
+      .sidebar { width: 100%; height: 100%; border: none; display: none; }
+      .main-viewport { width: 100%; height: 100%; display: none; padding: 12px; }
+      .app-container.show-tools #leftSidebarStudio { display: flex; }
+      .app-container.show-preview #mainViewport { display: flex; }
+      .app-container.show-adjust #rightSidebarStudio { display: flex; }
+      .sheet.a4 { transform: scale(0.42); transform-origin: top center; margin-bottom: -160mm; }
+      .sheet.photo4x6 { transform: scale(0.6); transform-origin: top center; margin-bottom: -35mm; }
     }
 
     @media print {
       body { background: transparent; height: auto; overflow: visible; }
-      .top-navbar, .mobile-subnav, .sidebar, .slot-member-badge { display: none !important; }
+      .top-navbar, .mobile-subnav, .sidebar, .slot-member-badge, .camera-modal { display: none !important; }
       .app-container { display: block; height: auto; }
       .main-viewport { background: transparent; padding: 0; overflow: visible; display: block !important; }
       .sheet { box-shadow: none; margin: 0; transform: none !important; }
@@ -509,7 +493,7 @@
   </div>
 </div>
 
-<!-- Mobile Sub Navigation Tabs -->
+<!-- Mobile Sub Navigation -->
 <div class="mobile-subnav" id="mobileSubnav">
   <button type="button" class="mob-tab-btn active" id="mobBtnTools">1. Edit & Face</button>
   <button type="button" class="mob-tab-btn" id="mobBtnPreview">2. Sheet Preview</button>
@@ -523,146 +507,182 @@
       <span id="activeEditorText">Editing: Single Photo</span>
     </div>
 
-    <!-- Family Allocation Sub-panel -->
+    <!-- 1. Source Image & Mode -->
+    <details class="accordion-sec" open>
+      <summary>1. Source Image & Camera <span class="tip-icon" data-tip="Upload a file or capture a photo directly with your camera.">ℹ</span></summary>
+      <div class="accordion-body">
+        <div class="control-group" id="singleUploadGroup">
+          <label for="imageUpload">Upload Portrait</label>
+          <input type="file" id="imageUpload" accept="image/*">
+          <button type="button" class="btn btn-secondary" id="btnOpenCam" style="margin-top: 4px;">📷 Open Camera Capture</button>
+        </div>
+
+        <div class="crop-wrapper">
+          <div class="crop-container mode-pan" id="cropContainer">
+            <canvas id="interactiveCanvas" width="200" height="257" style="width: 100%; height: 100%;"></canvas>
+            <div class="guide-overlay" id="guideOverlay">
+              <span class="guide-text">Top of Head</span>
+              <div class="guide-oval"></div>
+              <span class="guide-text">Chin Line</span>
+            </div>
+          </div>
+          <span class="drag-hint" id="canvasHint">Drag face into oval | Pinch/Scroll to zoom</span>
+        </div>
+
+        <div class="control-group">
+          <div class="label-row">
+            <label for="zoomSlider">Zoom Scale <span class="tip-icon" data-tip="Adjust image scale so crown and chin match the oval bounds.">ℹ</span></label>
+            <span id="valZoom" style="font-size:11px; font-weight:bold;">100%</span>
+          </div>
+          <input type="range" id="zoomSlider" data-cfg="zoom" min="10" max="300" value="100">
+        </div>
+
+        <div class="control-group">
+          <div class="label-row">
+            <label for="rotateSlider">Micro Tilt <span class="tip-icon" data-tip="Fine-tune slight shoulder or head tilts.">ℹ</span></label>
+            <span id="valRotate" style="font-size:11px; font-weight:bold;">0°</span>
+          </div>
+          <input type="range" id="rotateSlider" data-cfg="rotate" min="-20" max="20" value="0">
+        </div>
+
+        <div class="control-group">
+          <label>Orientation & Flips</label>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
+            <button type="button" class="btn btn-icon" id="btnRotate90">↻ +90°</button>
+            <button type="button" class="btn btn-icon" id="btnRotate180">↻ 180°</button>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 2px;">
+            <button type="button" class="btn btn-icon" id="btnRotate270">↺ -90°</button>
+            <button type="button" class="btn btn-icon" id="btnFlipH">⇄ Flip H</button>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <!-- 2. Manual Cleanup (Eraser) -->
+    <details class="accordion-sec" open>
+      <summary>2. Manual Cleanup & Eraser <span class="tip-icon" data-tip="Remove blemishes, background spill, or unwanted objects.">ℹ</span></summary>
+      <div class="accordion-body">
+        <div class="control-group">
+          <label>Active Tool</label>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px;">
+            <button type="button" class="btn btn-icon active" id="toolPan">✋ Pan</button>
+            <button type="button" class="btn btn-icon" id="toolErase">🧹 Erase</button>
+            <button type="button" class="btn btn-icon" id="toolRestore">🖌 Restore</button>
+          </div>
+        </div>
+        <div class="control-group">
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px;">
+            <button type="button" class="btn btn-icon" id="btnUndo" disabled>↩ Undo</button>
+            <button type="button" class="btn btn-icon" id="btnRedo" disabled>↪ Redo</button>
+            <button type="button" class="btn btn-icon" id="btnResetMask">Reset</button>
+          </div>
+        </div>
+        <div class="control-group">
+          <div class="label-row">
+            <label for="brushSize">Brush Size <span class="tip-icon" data-tip="Diameter of the manual erase/restore brush.">ℹ</span></label>
+            <span id="valBrushSize" style="font-size:11px; font-weight:bold;">24px</span>
+          </div>
+          <input type="range" id="brushSize" min="6" max="80" value="24">
+        </div>
+      </div>
+    </details>
+
+    <!-- 3. Formal Outfits & Suits -->
+    <details class="accordion-sec" open>
+      <summary>3. Formal Outfits & Suits <span class="tip-icon" data-tip="Overlay professional jackets, shirts, or custom PNG suits.">ℹ</span></summary>
+      <div class="accordion-body">
+        <div class="control-group">
+          <label for="suitSelect">Select Outfit</label>
+          <select id="suitSelect" data-cfg="suit">
+            <option value="none" selected>None (Original Clothes)</option>
+            <optgroup label="Real PNG Suits (Images Folder)">
+              <option value="png_black">Black Suit 01 (PNG)</option>
+              <option value="png_blue">Blue Suit 02 (PNG)</option>
+            </optgroup>
+            <optgroup label="Vector Templates (Recolorable)">
+              <option value="suit1">Navy Suit & Tie</option>
+              <option value="suit2">Charcoal Suit & Shirt</option>
+              <option value="suit3">Classic Black Tuxedo</option>
+              <option value="suit4">Dark Gray Suit & Tie</option>
+              <option value="suit5">White Shirt & Tie</option>
+              <option value="suit6">Sky Blue Office Shirt</option>
+              <option value="suit7">Navy Professional Blazer</option>
+            </optgroup>
+            <option value="custom" id="customSuitOption" disabled>Custom Uploaded PNG</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label for="customSuitUpload">Upload Custom Suit (PNG)</label>
+          <input type="file" id="customSuitUpload" accept="image/png,image/webp">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div class="control-group">
+            <label for="suitJacketColor">Jacket Tint</label>
+            <input type="color" id="suitJacketColor" data-cfg="suitJacketColor" value="#1e293b">
+          </div>
+          <div class="control-group">
+            <label for="suitTieColor">Tie Accent</label>
+            <input type="color" id="suitTieColor" data-cfg="suitTieColor" value="#0284c7">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div class="control-group">
+            <div class="label-row">
+              <label for="suitScale">Scale</label>
+              <span id="valSuitScale" style="font-size:11px; font-weight:bold;">100%</span>
+            </div>
+            <input type="range" id="suitScale" data-cfg="suitScale" min="50" max="180" value="100">
+          </div>
+          <div class="control-group">
+            <div class="label-row">
+              <label for="suitNeckWidth">Neck</label>
+              <span id="valSuitNeckWidth" style="font-size:11px; font-weight:bold;">100%</span>
+            </div>
+            <input type="range" id="suitNeckWidth" data-cfg="suitNeckWidth" min="50" max="160" value="100">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div class="control-group">
+            <div class="label-row">
+              <label for="suitX">Pos X</label>
+              <span id="valSuitX" style="font-size:11px; font-weight:bold;">0px</span>
+            </div>
+            <input type="range" id="suitX" data-cfg="suitX" min="-80" max="80" value="0">
+          </div>
+          <div class="control-group">
+            <div class="label-row">
+              <label for="suitY">Pos Y</label>
+              <span id="valSuitY" style="font-size:11px; font-weight:bold;">0px</span>
+            </div>
+            <input type="range" id="suitY" data-cfg="suitY" min="-120" max="120" value="0">
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <!-- 4. Family Batch Allocation Sub-panel -->
     <div id="familyManagementPanel" style="display: none; flex-direction: column; gap: 8px;">
-      <h3 class="panel-title">Add Family Member</h3>
-      <div class="control-group">
-        <input type="text" id="familyMemberName" placeholder="Name (e.g. Dad, Mom, Child)">
-        <input type="file" id="familyMemberFile" accept="image/*" style="margin-top: 4px;">
-        <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
-          <label for="familyMemberSlots" style="margin: 0; font-size: 11px;">Slots:</label>
-          <input type="number" id="familyMemberSlots" value="10" min="1" max="32" style="width: 70px;">
-          <button type="button" class="btn btn-success" id="btnAddFamilyMember" style="height: 34px; flex: 1;">Add Person</button>
+      <details class="accordion-sec" open>
+        <summary>Family Batch Queue <span class="tip-icon" data-tip="Assign multiple portraits to a shared sheet.">ℹ</span></summary>
+        <div class="accordion-body">
+          <div class="control-group">
+            <input type="text" id="familyMemberName" placeholder="Name (e.g. Dad, Mom)">
+            <input type="file" id="familyMemberFile" accept="image/*" style="margin-top: 4px;">
+            <div style="display: flex; gap: 6px; align-items: center; margin-top: 4px;">
+              <label for="familyMemberSlots" style="margin: 0; font-size: 11px;">Slots:</label>
+              <input type="number" id="familyMemberSlots" value="10" min="1" max="32" style="width: 60px;">
+              <button type="button" class="btn btn-success" id="btnAddFamilyMember" style="height: 32px; flex: 1;">Add Person</button>
+            </div>
+          </div>
+          <h3 style="font-size: 11px; font-weight: 800; text-transform: uppercase; margin: 4px 0 0 0; color: #475569;">Queue (<span id="familyTotalSlotsUsed">0</span> / 30 Slots)</h3>
+          <div id="familyQueueList" style="display: flex; flex-direction: column; gap: 6px;"></div>
         </div>
-      </div>
-      <h3 class="panel-title" style="margin-top: 4px;">Member List (<span id="familyTotalSlotsUsed">0</span> / 30 Slots)</h3>
-      <div id="familyQueueList" style="display: flex; flex-direction: column; gap: 6px;"></div>
-    </div>
-
-    <div class="control-group" id="singleUploadGroup">
-      <label for="imageUpload">Upload Portrait</label>
-      <input type="file" id="imageUpload" accept="image/*">
-    </div>
-
-    <!-- Live Interactive Studio Cropper -->
-    <div class="crop-wrapper">
-      <div class="crop-container mode-pan" id="cropContainer">
-        <canvas id="interactiveCanvas" width="200" height="257" style="width: 100%; height: 100%;"></canvas>
-        <div class="guide-overlay" id="guideOverlay">
-          <span class="guide-text">Top of Head</span>
-          <div class="guide-oval"></div>
-          <span class="guide-text">Chin Line</span>
-        </div>
-      </div>
-      <span class="drag-hint" id="canvasHint">Drag face into oval | Pinch/Scroll to zoom</span>
-    </div>
-
-    <!-- Eraser & Cleanup Tools -->
-    <div class="control-group">
-      <label>Manual Brush Cleanup</label>
-      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px;">
-        <button type="button" class="btn btn-icon active" id="toolPan">✋ Pan</button>
-        <button type="button" class="btn btn-icon" id="toolErase">🧹 Erase</button>
-        <button type="button" class="btn btn-icon" id="toolRestore">🖌 Restore</button>
-      </div>
-    </div>
-
-    <div class="control-group">
-      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px;">
-        <button type="button" class="btn btn-icon" id="btnUndo" disabled>↩ Undo</button>
-        <button type="button" class="btn btn-icon" id="btnRedo" disabled>↪ Redo</button>
-        <button type="button" class="btn btn-icon" id="btnResetMask">Reset</button>
-      </div>
-    </div>
-
-    <div class="control-group">
-      <label for="brushSize">Brush Size: <span id="valBrushSize">24px</span></label>
-      <input type="range" id="brushSize" min="6" max="80" value="24">
-    </div>
-
-    <!-- Rotations and Flips -->
-    <div class="control-group">
-      <label>Orientation & Flips</label>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-        <button type="button" class="btn btn-icon" id="btnRotate90">↻ +90°</button>
-        <button type="button" class="btn btn-icon" id="btnRotate180">↻ 180°</button>
-      </div>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 2px;">
-        <button type="button" class="btn btn-icon" id="btnRotate270">↺ -90°</button>
-        <button type="button" class="btn btn-icon" id="btnFlipH">⇄ Flip H</button>
-      </div>
-    </div>
-
-    <div class="control-group">
-      <label for="zoomSlider">Zoom: <span id="valZoom">100%</span></label>
-      <input type="range" id="zoomSlider" data-cfg="zoom" min="10" max="300" value="100">
-    </div>
-
-    <div class="control-group">
-      <label for="rotateSlider">Micro Tilt: <span id="valRotate">0°</span></label>
-      <input type="range" id="rotateSlider" data-cfg="rotate" min="-20" max="20" value="0">
-    </div>
-
-    <!-- Suits & Clothing Recoloring -->
-    <h3 class="panel-title" style="margin-top: 6px;">Outfits & Recoloring</h3>
-
-    <div class="control-group">
-      <label for="suitSelect">Select Outfit</label>
-      <select id="suitSelect" data-cfg="suit">
-        <option value="none" selected>None (Original Clothes)</option>
-        <optgroup label="Real PNG Suits (Images Folder)">
-          <option value="png_black">Black Suit 01 (PNG)</option>
-          <option value="png_blue">Blue Suit 02 (PNG)</option>
-        </optgroup>
-        <optgroup label="Vector Templates (Recolorable)">
-          <option value="suit1">Navy Suit & Tie</option>
-          <option value="suit2">Charcoal Suit & Shirt</option>
-          <option value="suit3">Classic Black Tuxedo</option>
-          <option value="suit4">Dark Gray Suit & Tie</option>
-          <option value="suit5">White Shirt & Tie</option>
-          <option value="suit6">Sky Blue Office Shirt</option>
-          <option value="suit7">Navy Professional Blazer</option>
-        </optgroup>
-        <option value="custom" id="customSuitOption" disabled>Custom Uploaded PNG</option>
-      </select>
-    </div>
-
-    <div class="control-group">
-      <label for="customSuitUpload">Upload Custom Suit (PNG)</label>
-      <input type="file" id="customSuitUpload" accept="image/png,image/webp">
-    </div>
-
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-      <div class="control-group">
-        <label for="suitJacketColor">Jacket Tint</label>
-        <input type="color" id="suitJacketColor" data-cfg="suitJacketColor" value="#1e293b">
-      </div>
-      <div class="control-group">
-        <label for="suitTieColor">Tie / Accent</label>
-        <input type="color" id="suitTieColor" data-cfg="suitTieColor" value="#0284c7">
-      </div>
-    </div>
-
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-      <div class="control-group">
-        <label for="suitScale">Scale: <span id="valSuitScale">100%</span></label>
-        <input type="range" id="suitScale" data-cfg="suitScale" min="50" max="180" value="100">
-      </div>
-      <div class="control-group">
-        <label for="suitNeckWidth">Neck: <span id="valSuitNeckWidth">100%</span></label>
-        <input type="range" id="suitNeckWidth" data-cfg="suitNeckWidth" min="50" max="160" value="100">
-      </div>
-    </div>
-
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-      <div class="control-group">
-        <label for="suitX">Pos X: <span id="valSuitX">0px</span></label>
-        <input type="range" id="suitX" data-cfg="suitX" min="-80" max="80" value="0">
-      </div>
-      <div class="control-group">
-        <label for="suitY">Pos Y: <span id="valSuitY">0px</span></label>
-        <input type="range" id="suitY" data-cfg="suitY" min="-120" max="120" value="0">
-      </div>
+      </details>
     </div>
   </div>
 
@@ -673,124 +693,194 @@
 
   <!-- RIGHT SIDEBAR -->
   <div class="sidebar right-sidebar" id="rightSidebarStudio">
-    <h3 class="panel-title">2. Color, Edges & Layout</h3>
-
-    <div class="control-group">
-      <label for="presetSelect">Format</label>
-      <select id="presetSelect" data-cfg="preset">
-        <option value="35x45" selected>Standard (35 x 45 mm)</option>
-        <option value="51x51">US Visa (2 x 2 inch)</option>
-        <option value="33x48">China (33 x 48 mm)</option>
-      </select>
-    </div>
-
-    <div class="control-group">
-      <label for="paperSelect">Paper</label>
-      <select id="paperSelect" data-cfg="paper">
-        <option value="a4" selected>Full A4 Sheet</option>
-        <option value="photo4x6">4 x 6 inch Photo Card</option>
-      </select>
-    </div>
-
-    <!-- Cut Guide & Border Style Selection -->
-    <div class="control-group">
-      <label for="borderStyleSelect">Cutting Guides / Borders</label>
-      <select id="borderStyleSelect" data-cfg="borderStyle">
-        <option value="cropmarks" selected>Corner Crop Marks (Trim Lines)</option>
-        <option value="solid">Solid Black Border (2px)</option>
-        <option value="none">No Border / Plain Cut</option>
-      </select>
-    </div>
-
-    <div class="control-group">
-      <label for="bgTypeSelect">Background Type</label>
-      <select id="bgTypeSelect" data-cfg="bgType">
-        <option value="original" selected>Original Background (Unedited)</option>
-        <option value="solid">Solid Color Fill</option>
-        <option value="gradient">Studio Vignette Gradient</option>
-        <option value="blur">Blurred Original Background</option>
-      </select>
-    </div>
-
-    <div class="control-group">
-      <button type="button" class="btn btn-secondary" id="btnTriggerAICutout">Run AI Background Cutout</button>
-    </div>
-
-    <div class="control-group">
-      <label for="edgeFeather">Edge Feather: <span id="valEdgeFeather">0px</span></label>
-      <input type="range" id="edgeFeather" data-cfg="edgeFeather" min="0" max="6" value="0" step="0.5">
-    </div>
-
-    <div class="control-group">
-      <label for="bgColor">Background Color</label>
-      <input type="color" id="bgColor" data-cfg="bgColor" value="#ffffff">
-    </div>
-
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-      <div class="control-group">
-        <label for="slotsPerPage">Slots/Page</label>
-        <input type="number" id="slotsPerPage" data-cfg="slotsPerPage" min="1" max="32" value="30">
+    <!-- Preset Manager -->
+    <details class="accordion-sec" open>
+      <summary>Preset Manager <span class="tip-icon" data-tip="Quickly save and load configurations from local storage.">ℹ</span></summary>
+      <div class="accordion-body">
+        <div class="control-group">
+          <label for="presetManagerSelect">Active Preset Profile</label>
+          <select id="presetManagerSelect">
+            <option value="default">Default (Standard 35x45mm)</option>
+            <option value="us_visa">US Visa 2x2 in (Solid White)</option>
+            <option value="uk_passport">UK/EU Passport (Light Grey)</option>
+            <option value="china_passport">China Passport 33x48mm</option>
+          </select>
+        </div>
+        <div style="display: flex; gap: 4px;">
+          <input type="text" id="customPresetName" placeholder="New Preset Name" style="flex:1;">
+          <button type="button" class="btn btn-secondary" id="btnSavePreset" style="width:auto; padding:0 8px;">Save</button>
+          <button type="button" class="btn btn-danger" id="btnDeletePreset" style="width:auto; padding:0 8px;">Del</button>
+        </div>
       </div>
-      <div class="control-group">
-        <label for="totalPages">Pages</label>
-        <input type="number" id="totalPages" data-cfg="totalPages" min="1" max="10" value="1">
+    </details>
+
+    <!-- Background & Edges -->
+    <details class="accordion-sec" open>
+      <summary>Background & Edge Softening <span class="tip-icon" data-tip="Change background color and smooth cutout borders.">ℹ</span></summary>
+      <div class="accordion-body">
+        <div class="control-group">
+          <label for="bgTypeSelect">Background Type</label>
+          <select id="bgTypeSelect" data-cfg="bgType">
+            <option value="original" selected>Original Background (Unedited)</option>
+            <option value="solid">Solid Color Fill</option>
+            <option value="gradient">Studio Vignette Gradient</option>
+            <option value="blur">Blurred Original Background</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <button type="button" class="btn btn-secondary" id="btnTriggerAICutout">Run AI Background Cutout</button>
+        </div>
+        <div class="control-group">
+          <div class="label-row">
+            <label for="edgeFeather">Edge Feather / Softening</label>
+            <span id="valEdgeFeather" style="font-size:11px; font-weight:bold;">0px</span>
+          </div>
+          <input type="range" id="edgeFeather" data-cfg="edgeFeather" min="0" max="6" value="0" step="0.5">
+        </div>
+        <div class="control-group">
+          <label for="bgColor">Solid / Gradient Color</label>
+          <input type="color" id="bgColor" data-cfg="bgColor" value="#ffffff">
+        </div>
       </div>
-    </div>
+    </details>
 
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-      <div class="control-group">
-        <label for="gridGap">Gap: <span id="valGridGap">2mm</span></label>
-        <input type="range" id="gridGap" data-cfg="gridGap" min="0" max="8" value="2">
+    <!-- Color & Lighting Tuning -->
+    <details class="accordion-sec" open>
+      <summary>Color & Lighting Tuning <span class="tip-icon" data-tip="Adjust face brightness, contrast, and color temperature.">ℹ</span></summary>
+      <div class="accordion-body">
+        <div class="control-group">
+          <div class="label-row">
+            <label for="brightness">Face Brightness</label>
+            <span id="valBrightness" style="font-size:11px; font-weight:bold;">110%</span>
+          </div>
+          <input type="range" id="brightness" data-cfg="brightness" min="70" max="150" value="110">
+        </div>
+        <div class="control-group">
+          <div class="label-row">
+            <label for="contrast">Face Contrast</label>
+            <span id="valContrast" style="font-size:11px; font-weight:bold;">80%</span>
+          </div>
+          <input type="range" id="contrast" data-cfg="contrast" min="50" max="150" value="80">
+        </div>
+        <div class="control-group">
+          <div class="label-row">
+            <label for="warmth">Color Warmth</label>
+            <span id="valWarmth" style="font-size:11px; font-weight:bold;">0%</span>
+          </div>
+          <input type="range" id="warmth" data-cfg="warmth" min="-50" max="50" value="0">
+        </div>
+        <div class="control-group">
+          <div class="label-row">
+            <label for="shadowStrength">Shadow Depth</label>
+            <span id="valShadow" style="font-size:11px; font-weight:bold;">0%</span>
+          </div>
+          <input type="range" id="shadowStrength" data-cfg="shadowStrength" min="0" max="70" value="0">
+        </div>
+        <div class="control-group">
+          <div class="label-row">
+            <label for="highlightStrength">Highlight Lift</label>
+            <span id="valHighlight" style="font-size:11px; font-weight:bold;">5%</span>
+          </div>
+          <input type="range" id="highlightStrength" data-cfg="highlightStrength" min="0" max="70" value="5">
+        </div>
       </div>
-      <div class="control-group">
-        <label for="pageMargin">Margin: <span id="valPageMargin">8mm</span></label>
-        <input type="range" id="pageMargin" data-cfg="pageMargin" min="4" max="20" value="8">
+    </details>
+
+    <!-- Sheet Layout & Cutting -->
+    <details class="accordion-sec" open>
+      <summary>Sheet Layout & Cutting <span class="tip-icon" data-tip="Configure print paper size, crop marks, and grid gap.">ℹ</span></summary>
+      <div class="accordion-body">
+        <div class="control-group">
+          <label for="presetSelect">Document Format</label>
+          <select id="presetSelect" data-cfg="preset">
+            <option value="35x45" selected>Standard (35 x 45 mm)</option>
+            <option value="51x51">US Visa (2 x 2 inch)</option>
+            <option value="33x48">China (33 x 48 mm)</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label for="paperSelect">Paper Type</label>
+          <select id="paperSelect" data-cfg="paper">
+            <option value="a4" selected>Full A4 Sheet</option>
+            <option value="photo4x6">4 x 6 inch Photo Card</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label for="borderStyleSelect">Cutting Guides</label>
+          <select id="borderStyleSelect" data-cfg="borderStyle">
+            <option value="cropmarks" selected>Corner Crop Marks (Trim Lines)</option>
+            <option value="solid">Solid Black Border (2px)</option>
+            <option value="none">No Border / Plain Cut</option>
+          </select>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div class="control-group">
+            <label for="slotsPerPage">Slots/Page</label>
+            <input type="number" id="slotsPerPage" data-cfg="slotsPerPage" min="1" max="32" value="30">
+          </div>
+          <div class="control-group">
+            <label for="totalPages">Pages</label>
+            <input type="number" id="totalPages" data-cfg="totalPages" min="1" max="10" value="1">
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div class="control-group">
+            <div class="label-row">
+              <label for="gridGap">Gap</label>
+              <span id="valGridGap" style="font-size:11px; font-weight:bold;">2mm</span>
+            </div>
+            <input type="range" id="gridGap" data-cfg="gridGap" min="0" max="8" value="2">
+          </div>
+          <div class="control-group">
+            <div class="label-row">
+              <label for="pageMargin">Margin</label>
+              <span id="valPageMargin" style="font-size:11px; font-weight:bold;">8mm</span>
+            </div>
+            <input type="range" id="pageMargin" data-cfg="pageMargin" min="4" max="20" value="8">
+          </div>
+        </div>
       </div>
-    </div>
-
-    <div class="control-group">
-      <label for="brightness">Brightness: <span id="valBrightness">110%</span></label>
-      <input type="range" id="brightness" data-cfg="brightness" min="70" max="150" value="110">
-    </div>
-
-    <div class="control-group">
-      <label for="contrast">Contrast: <span id="valContrast">80%</span></label>
-      <input type="range" id="contrast" data-cfg="contrast" min="50" max="150" value="80">
-    </div>
-
-    <div class="control-group">
-      <label for="warmth">Warmth: <span id="valWarmth">0%</span></label>
-      <input type="range" id="warmth" data-cfg="warmth" min="-50" max="50" value="0">
-    </div>
-
-    <div class="control-group">
-      <label for="shadowStrength">Shadow Depth: <span id="valShadow">0%</span></label>
-      <input type="range" id="shadowStrength" data-cfg="shadowStrength" min="0" max="70" value="0">
-    </div>
-
-    <div class="control-group">
-      <label for="highlightStrength">Highlight Lift: <span id="valHighlight">5%</span></label>
-      <input type="range" id="highlightStrength" data-cfg="highlightStrength" min="0" max="70" value="5">
-    </div>
+    </details>
 
     <div class="status-msg" id="statusMessage"></div>
 
-    <h3 class="panel-title" style="margin-top: 6px;">3. Export Options</h3>
-
+    <!-- Export & Print Actions -->
     <div class="btn-group">
       <button type="button" class="btn btn-success" id="btnDownloadSingle">Single Photo (300 DPI)</button>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
         <button type="button" class="btn btn-success" id="btnDownloadSheetJPG">Sheet (JPG)</button>
         <button type="button" class="btn btn-success" id="btnDownloadSheetPNG">Sheet (PNG)</button>
       </div>
       <button type="button" class="btn btn-success" id="btnDownloadPDF">Download Sheet (PDF)</button>
       <button type="button" class="btn" id="btnPrint">Print Sheet</button>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
         <button type="button" class="btn btn-secondary" id="btnExportJSON">Save JSON</button>
         <button type="button" class="btn btn-secondary" id="btnTriggerImportJSON">Load JSON</button>
       </div>
       <input type="file" id="jsonFileInput" accept=".json" style="display: none;">
       <button type="button" class="btn btn-danger" id="btnReset">Reset All</button>
+    </div>
+  </div>
+</div>
+
+<!-- Live Camera Capture Modal -->
+<div class="camera-modal" id="cameraModal">
+  <div class="camera-box">
+    <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+      <span style="font-size: 13px; font-weight: 800; text-transform: uppercase;">Live Camera Alignment</span>
+      <button type="button" class="btn btn-danger" id="btnCloseCam" style="width: auto; height: 26px; padding: 0 8px; font-size: 11px;">✕ Close</button>
+    </div>
+    <div class="camera-view-wrapper">
+      <video id="cameraVideo" autoplay playsinline></video>
+      <div class="guide-overlay">
+        <span class="guide-text">Align Crown (Top)</span>
+        <div class="guide-oval"></div>
+        <span class="guide-text">Align Chin</span>
+      </div>
+    </div>
+    <div style="display: flex; gap: 8px; width: 100%;">
+      <button type="button" class="btn btn-secondary" id="btnFlipCam">🔄 Switch Camera</button>
+      <button type="button" class="btn btn-success" id="btnTakeSnap">📸 Capture Photo</button>
     </div>
   </div>
 </div>
@@ -820,6 +910,9 @@
   let maskRedoStack = [];
   const MAX_HISTORY = 15;
 
+  let mediaStream = null;
+  let currentFacingMode = 'user'; // 'user' (front) or 'environment' (back)
+
   const { jsPDF } = window.jspdf;
 
   // DOM Elements
@@ -834,6 +927,14 @@
   const mobBtnTools = document.getElementById('mobBtnTools');
   const mobBtnPreview = document.getElementById('mobBtnPreview');
   const mobBtnAdjust = document.getElementById('mobBtnAdjust');
+
+  // Camera Modal Elements
+  const btnOpenCam = document.getElementById('btnOpenCam');
+  const cameraModal = document.getElementById('cameraModal');
+  const cameraVideo = document.getElementById('cameraVideo');
+  const btnCloseCam = document.getElementById('btnCloseCam');
+  const btnFlipCam = document.getElementById('btnFlipCam');
+  const btnTakeSnap = document.getElementById('btnTakeSnap');
 
   const upload = document.getElementById('imageUpload');
   const presetSelect = document.getElementById('presetSelect');
@@ -864,6 +965,12 @@
   const shadowStrengthInput = document.getElementById('shadowStrength');
   const highlightStrengthInput = document.getElementById('highlightStrength');
   const statusMsg = document.getElementById('statusMessage');
+
+  // Preset Manager
+  const presetManagerSelect = document.getElementById('presetManagerSelect');
+  const customPresetName = document.getElementById('customPresetName');
+  const btnSavePreset = document.getElementById('btnSavePreset');
+  const btnDeletePreset = document.getElementById('btnDeletePreset');
 
   const familyMemberName = document.getElementById('familyMemberName');
   const familyMemberFile = document.getElementById('familyMemberFile');
@@ -946,7 +1053,6 @@
     settings: { ...defaultSettings }
   };
 
-  // Preloaded PNG Suit Images
   const preloadedPngSuits = {
     png_black: new Image(),
     png_blue: new Image()
@@ -956,6 +1062,139 @@
 
   const customSuitImage = new Image();
 
+  // Preset Manager setup
+  const builtInProfiles = {
+    default: { ...defaultSettings },
+    us_visa: { ...defaultSettings, preset: '51x51', paper: 'photo4x6', slotsPerPage: 4, bgType: 'solid', bgColor: '#ffffff', edgeFeather: 1.5 },
+    uk_passport: { ...defaultSettings, preset: '35x45', paper: 'a4', slotsPerPage: 30, bgType: 'solid', bgColor: '#f1f5f9', edgeFeather: 1.0 },
+    china_passport: { ...defaultSettings, preset: '33x48', paper: 'a4', slotsPerPage: 28, bgType: 'solid', bgColor: '#ffffff', edgeFeather: 1.0 }
+  };
+
+  function loadUserCustomPresetsList() {
+    let saved = JSON.parse(localStorage.getItem('passport_user_presets') || '{}');
+    Array.from(presetManagerSelect.options).forEach(opt => {
+      if (!builtInProfiles[opt.value]) presetManagerSelect.removeChild(opt);
+    });
+    Object.keys(saved).forEach(name => {
+      const opt = document.createElement('option');
+      opt.value = `custom_${name}`;
+      opt.innerText = `Custom: ${name}`;
+      presetManagerSelect.appendChild(opt);
+    });
+  }
+
+  presetManagerSelect.addEventListener('change', () => {
+    const val = presetManagerSelect.value;
+    let targetConfig = null;
+
+    if (builtInProfiles[val]) {
+      targetConfig = builtInProfiles[val];
+    } else if (val.startsWith('custom_')) {
+      const name = val.replace('custom_', '');
+      const saved = JSON.parse(localStorage.getItem('passport_user_presets') || '{}');
+      targetConfig = saved[name];
+    }
+
+    if (targetConfig) {
+      const profile = getActiveProfile();
+      if (profile) {
+        profile.settings = { ...profile.settings, ...targetConfig };
+        loadProfileIntoEditor(profile);
+        updateGridSheets();
+        statusMsg.innerText = `Applied preset: ${presetManagerSelect.selectedOptions[0].text}`;
+        setTimeout(() => { statusMsg.innerText = ''; }, 1800);
+      }
+    }
+  });
+
+  btnSavePreset.addEventListener('click', () => {
+    const name = customPresetName.value.trim();
+    if (!name) {
+      statusMsg.innerText = 'Enter a preset name first.';
+      return;
+    }
+    const profile = getActiveProfile();
+    if (!profile) return;
+
+    saveCurrentEditorToActiveProfile();
+    let saved = JSON.parse(localStorage.getItem('passport_user_presets') || '{}');
+    saved[name] = { ...profile.settings };
+    localStorage.setItem('passport_user_presets', JSON.stringify(saved));
+    customPresetName.value = '';
+    loadUserCustomPresetsList();
+    presetManagerSelect.value = `custom_${name}`;
+    statusMsg.innerText = `Saved custom preset "${name}"!`;
+    setTimeout(() => { statusMsg.innerText = ''; }, 1800);
+  });
+
+  btnDeletePreset.addEventListener('click', () => {
+    const val = presetManagerSelect.value;
+    if (!val.startsWith('custom_')) {
+      statusMsg.innerText = 'Cannot delete default built-in presets.';
+      return;
+    }
+    const name = val.replace('custom_', '');
+    let saved = JSON.parse(localStorage.getItem('passport_user_presets') || '{}');
+    delete saved[name];
+    localStorage.setItem('passport_user_presets', JSON.stringify(saved));
+    loadUserCustomPresetsList();
+    presetManagerSelect.value = 'default';
+    presetManagerSelect.dispatchEvent(new Event('change'));
+  });
+
+  // Camera Capture Setup
+  async function startCamera() {
+    try {
+      if (mediaStream) {
+        mediaStream.getTracks().forEach(t => t.stop());
+      }
+      mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: currentFacingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false
+      });
+      cameraVideo.srcObject = mediaStream;
+      cameraModal.style.display = 'flex';
+    } catch (err) {
+      alert("Unable to access camera. Please check permissions.");
+    }
+  }
+
+  function stopCamera() {
+    if (mediaStream) {
+      mediaStream.getTracks().forEach(t => t.stop());
+      mediaStream = null;
+    }
+    cameraModal.style.display = 'none';
+  }
+
+  btnOpenCam.addEventListener('click', () => startCamera());
+  btnCloseCam.addEventListener('click', () => stopCamera());
+
+  btnFlipCam.addEventListener('click', () => {
+    currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+    startCamera();
+  });
+
+  btnTakeSnap.addEventListener('click', () => {
+    if (!cameraVideo.videoWidth) return;
+    const snapCanvas = document.createElement('canvas');
+    snapCanvas.width = cameraVideo.videoWidth;
+    snapCanvas.height = cameraVideo.videoHeight;
+    const sCtx = snapCanvas.getContext('2d');
+    sCtx.drawImage(cameraVideo, 0, 0, snapCanvas.width, snapCanvas.height);
+    const dataUrl = snapCanvas.toDataURL('image/jpeg', 0.95);
+    stopCamera();
+
+    panX = 0;
+    panY = 0;
+    baseAngle = 0;
+    isFlippedH = false;
+    zoomSlider.value = 100;
+    rotateSlider.value = 0;
+    processLoadedImageData(dataUrl);
+  });
+
+  // Mobile View Switcher
   function setMobileView(view) {
     appContainer.classList.remove('show-tools', 'show-preview', 'show-adjust');
     mobBtnTools.classList.remove('active');
@@ -2030,7 +2269,7 @@
     saveCurrentEditorToActiveProfile();
 
     const configData = {
-      version: "3.5",
+      version: "3.7",
       timestamp: new Date().toISOString(),
       appMode: appMode,
       singleStudioState: {
@@ -2180,6 +2419,8 @@
     });
   });
 
+  // Init
+  loadUserCustomPresetsList();
   adjustCropContainerSize();
   updateLabels();
 </script>
